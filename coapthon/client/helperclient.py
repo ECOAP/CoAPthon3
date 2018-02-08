@@ -202,6 +202,7 @@ class HelperClient(object):
         if callback is not None:
             thread = threading.Thread(target=self._thread_body, args=(request, callback))
             thread.start()
+            return request
         else:
             self.protocol.send_message(request)
             try:

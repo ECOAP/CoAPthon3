@@ -71,6 +71,9 @@ class CoAP(object):
 
         self._receiver_thread = None
 
+        self._retx = 0 # Cumulative number of retx (for stats)
+        self._num = 0 # Cumulative number of requests (for stats)
+
     def close(self):
         """
         Stop the client.
@@ -212,9 +215,16 @@ class CoAP(object):
 
             if message.acknowledged or message.rejected:
                 message.timeouted = False
+
+                self._retx = self._retx + retransmit_count
+                self._num = self._num + 1
+
             else:
                 logger.warning("Give up on message {message}".format(message=message.line_print))
                 message.timeouted = True
+
+                self._retx = self._retx + defines.MAX_RETRANSMIT
+                self._num = self._num + 1
 
                 # Inform the user, that nothing was received
                 self._callback(None)
@@ -227,6 +237,9 @@ class CoAP(object):
             transaction.retransmit_thread = None
 
             logger.debug("retransmit loop ... exit")
+
+    def avg_retx(self):
+            return float(self._retx / self._num)
 
     def receive_datagram(self):
         """
